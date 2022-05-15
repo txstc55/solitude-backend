@@ -9,11 +9,9 @@ for (var i = 0; i < banlistarray.length; i++) {
     banlistarrayHashed.push(require('crypto').createHash('md5').update(banlistarray[i]).digest('hex'));
 }
 console.log(banlistarray.includes("185.129.62.62"))
-console.log(require('crypto').createHash('md5').update("185.129.62.62").digest('hex'))
-console.log(require('crypto').createHash('md5').update("185.129.62.62").digest('hex'))
 
 
-var banlist = new Set([banlistarrayHashed])
+var banlist = new Set(banlistarrayHashed)
 console.log(banlist.has(require('crypto').createHash('md5').update("185.129.62.62").digest('hex')))
 var viewBanList = new Set([])
 var viewlist = {};
