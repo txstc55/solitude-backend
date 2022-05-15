@@ -7,12 +7,12 @@ var banliststr = process.env.SOLITUDE_BAN_LIST || ""
 var banlistarray = banliststr.split(" ")
 var banlistarrayHashed = []
 for (var i = 0; i < banlistarray.length; i++) {
-    banlistarrayHashed.push(crypto.createHash('md5').update(banlistarray[i]).digest('hex'));
+    banlistarrayHashed.push(crypto.createHash('md5', banlistarray[i]).digest('hex'));
 }
 console.log(banlistarray.includes("185.129.62.62"))
 
 var banlist = new Set([banlistarrayHashed])
-console.log(banlist.has(crypto.createHash('md5').update("185.129.62.62").digest('hex')))
+console.log(banlist.has(crypto.createHash('md5', "185.129.62.62").digest('hex')))
 var viewBanList = new Set([])
 var viewlist = {};
 
@@ -44,7 +44,7 @@ exports.get_random_confession = async (req, res) => {
     try {
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
         // get the ip and hash it
-        const ip_hashed = crypto.createHash('md5').update(ip).digest('hex')
+        const ip_hashed = crypto.createHash('md5', ip).digest('hex')
         if (banlist.has(ip_hashed)) {
             return res.status(404).send({ message: "BANNED" })
         }
@@ -79,7 +79,7 @@ var offendList = {}
 exports.post_confession = async (req, res) => {
     try {
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-        const ip_hashed = crypto.createHash('md5').update(ip).digest('hex')
+        const ip_hashed = crypto.createHash('md5', ip).digest('hex')
         if (banlist.has(ip_hashed)) {
             return res.status(404).send({ message: "BANNED" })
         }
