@@ -9,7 +9,7 @@ var banlistarrayHashed = []
 for (var i = 0; i < banlistarray.length; i++) {
     banlistarrayHashed.push(crypto.createHash('md5').update(banlistarray[i]).digest('hex'));
 }
-console.log("185.129.62.62" in banlistarray)
+console.log(banlistarray.includes("185.129.62.62"))
 
 var banlist = new Set([banlistarrayHashed])
 console.log(banlist.has(crypto.createHash('md5').update("185.129.62.62").digest('hex')))
