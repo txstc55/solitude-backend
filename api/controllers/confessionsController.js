@@ -2,15 +2,6 @@ const mongoose = require('mongoose');
 const confession = mongoose.model('confessions');
 const bannedUsers = mongoose.model('bannedUsers');
 
-async function initializeBan() {
-    var banliststr = process.env.SOLITUDE_BAN_LIST || ""
-    var banlistarray = banliststr.split(" ")
-    for (var i = 0; i < banlistarray.length; i++) {
-        const bannedIP = new bannedUsers({ hashedIP: require('crypto').createHash('md5').update(banlistarray[i]).digest('hex') })
-        bannedIP.save();
-    }
-}
-initializeBan()
 
 var viewlist = {};
 
