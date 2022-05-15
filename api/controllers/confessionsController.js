@@ -1,21 +1,20 @@
 const mongoose = require('mongoose');
 const confession = mongoose.model('confessions');
+const bannedUsers = mongoose.model('bannedUsers');
 
-
-var banliststr = process.env.SOLITUDE_BAN_LIST || ""
-var banlistarray = banliststr.split(" ")
-var banlistarrayHashed = []
-for (var i = 0; i < banlistarray.length; i++) {
-    banlistarrayHashed.push(require('crypto').createHash('md5').update(banlistarray[i]).digest('hex'));
+async function initializeBan() {
+    var banliststr = process.env.SOLITUDE_BAN_LIST || ""
+    var banlistarray = banliststr.split(" ")
+    for (var i = 0; i < banlistarray.length; i++) {
+        const bannedIP = new bannedUsers({ hashedIP: require('crypto').createHash('md5').update(banlistarray[i]).digest('hex') })
+        bannedIP.save();
+    }
 }
+initializeBan()
 
-
-var banlist = new Set(banlistarrayHashed)
-var viewBanList = new Set([])
 var viewlist = {};
 
 function clearViewBanlist() {
-    viewBanList = new Set([])
     viewlist = {}
     // clear the banlist ever hour
     setTimeout(clearViewBanlist, 1000 * 60 * 60);
@@ -24,17 +23,18 @@ function clearViewBanlist() {
 clearViewBanlist();
 
 // if every view request is less than 1 second, it's a bot
-function banViewbot(ip) {
-    if (ip in viewlist) {
-        if ((new Date() - viewlist[ip].time) / 1000 <= 1) {
-            viewlist[ip].count += 1;
+async function banViewbot(ip_hashed) {
+    if (ip_hashed in viewlist) {
+        if ((new Date() - viewlist[ip_hashed].time) / 1000 <= 1) {
+            viewlist[ip_hashed].count += 1;
         }
-        viewlist[ip].time = new Date();
-        if (viewlist[ip].count >= 500) {
-            viewBanList.add(ip);
+        viewlist[ip_hashed].time = new Date();
+        if (viewlist[ip_hashed].count >= 5) {
+            const bannedIP = new bannedUsers({ hashedIP: ip_hashed })
+            await bannedIP.save();
         }
     } else {
-        viewlist[ip] = { count: 1, time: new Date() };
+        viewlist[ip_hashed] = { count: 1, time: new Date() };
     }
 }
 
@@ -43,11 +43,9 @@ exports.get_random_confession = async (req, res) => {
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
         // get the ip and hash it
         const ip_hashed = require('crypto').createHash('md5').update(ip).digest('hex')
-        if (banlist.has(ip_hashed)) {
+        const ban_existance = await bannedUsers.findOne({ hashedIP: ip_hashed })
+        if (ban_existance) {
             return res.status(404).send({ message: "BANNED" })
-        }
-        if (viewBanList.has(ip_hashed)) {
-            return res.status(404).send({ message: "You've been viewing too fast" })
         }
         banViewbot(ip_hashed);
         var filtered = await confession.find({ seenIPs: { "$nin": [ip_hashed] } });
@@ -78,7 +76,8 @@ exports.post_confession = async (req, res) => {
     try {
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
         const ip_hashed = require('crypto').createHash('md5').update(ip).digest('hex')
-        if (banlist.has(ip_hashed)) {
+        const ban_existance = await bannedUsers.findOne({ hashedIP: ip_hashed })
+        if (ban_existance) {
             return res.status(404).send({ message: "BANNED" })
         }
         var oldConfession = await confession.findOne({ ip: ip_hashed }, {}, { sort: { lastPostTime: -1 } });
@@ -91,8 +90,9 @@ exports.post_confession = async (req, res) => {
                         offendList[ip_hashed] += 1;
                         if (offendList[ip_hashed] >= 5) {
                             // add to banlist
-                            console.log(ip + " has been banned");
-                            banlist.add(ip_hashed);
+                            console.log(ip + " has been banned, hash: " + ip_hashed);
+                            const bannedIP = new bannedUsers({ hashedIP: ip_hashed })
+                            await bannedIP.save();
                             // remove from offend list
                             delete offendList[ip_hashed];
                             // delete any confession from this ip

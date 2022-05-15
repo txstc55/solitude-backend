@@ -11,6 +11,7 @@ app.use(cors());
 
 global.chatBoxTexts = require('./api/models/chatBoxTexts');
 global.confessions = require('./api/models/confessions');
+global.bannedUsers = require('./api/models/bannedUsers');
 
 const chatBoxTextsRoutes = require('./api/routes/chatBoxTextsRoutes');
 const confessionsRoutes = require('./api/routes/confessionsRoutes');
