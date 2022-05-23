@@ -6,7 +6,7 @@ var currentIndex = 0;
 
 exports.get_text_by_index = async (req, res) => {
     try {
-        console.log("Getting request for post: " + req.query.index);
+        // console.log("Getting request for post: " + req.query.index);
         const post = await chatBox.findOne({ index: req.query.index }) // use id to find the user
         const data = await post.toJSON();
         return res.send(data);
@@ -20,7 +20,7 @@ exports.get_text_by_index = async (req, res) => {
 
 exports.post_text = async (req, res) => {
     try {
-        console.log("Posting request for post: " + currentIndex + ", text: " + req.body.text);
+        // console.log("Posting request for post: " + currentIndex + ", text: " + req.body.text);
         await chatBox.findOneAndUpdate({ index: currentIndex }, { text: req.body.text });
         currentIndex += 1;
         currentIndex = currentIndex % 6
